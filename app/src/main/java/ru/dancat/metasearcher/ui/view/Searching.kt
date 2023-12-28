@@ -1,46 +1,69 @@
 package ru.dancat.metasearcher.ui.view
 
-import androidx.compose.foundation.Image
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.imageResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import ru.dancat.metasearcher.R
-import ru.dancat.metasearcher.ui.components.BlocksRow
-import ru.dancat.metasearcher.ui.components.Section
-import ru.dancat.metasearcher.ui.theme.BorderColor
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
+import ru.dancat.metasearcher.backend.clients.client
+import ru.dancat.metasearcher.backend.models.Metro
+import ru.dancat.metasearcher.backend.models.StudioLite
+import ru.dancat.metasearcher.backend.models.StudioRequest
+import ru.dancat.metasearcher.backend.models.Style
+import ru.dancat.metasearcher.ui.components.*
 import ru.dancat.metasearcher.ui.theme.FirstBackground
 import ru.dancat.metasearcher.ui.theme.FirstTextColor
-import ru.dancat.metasearcher.ui.theme.SecondBackground
-import java.lang.Math.round
+import kotlin.math.roundToInt
 
 @Preview(showBackground = true)
 @Composable
 fun SearchingPreview() {
-    Searching()
+    Searching(rememberNavController())
 }
 
 @Composable
-fun Searching() {
+fun Searching(navController: NavController) {
+    val metros = remember { mutableStateOf<List<Metro>>(emptyList()) }
+    val directions = remember { mutableStateOf<List<Style>>(emptyList()) }
+    val studios = remember { mutableStateOf<List<StudioLite>>(emptyList()) }
+
+    val searchFlag = remember { mutableStateOf(false) }
+    val searchText = remember { mutableStateOf("") }
+    val averagePrice = remember { mutableStateOf(0f..100f) }
+    val averageRate = remember { mutableStateOf(0f) }
+    val selectedMetro = remember { mutableStateOf("") }
+    val selectedDirection = remember { mutableStateOf("") }
+
+    val scope = rememberCoroutineScope()
+
+    DisposableEffect(Unit) {
+        val job = scope.launch {
+            try {
+                metros.value = client.getMetros()
+                directions.value = client.getStyles()
+                val result = client.getStudios(StudioRequest())
+                studios.value = result.content
+            } catch (e: Exception) {
+                println(e.message)
+                println(e.cause)
+                println(e.stackTrace)
+            }
+        }
+
+        onDispose {
+            job.cancel()
+        }
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -53,252 +76,111 @@ fun Searching() {
                 .fillMaxWidth()
                 .background(FirstBackground)
         ) {
-            SearchBar()
-            AveragePrice()
-            UpperRate()
-            ExposedDropdownMenuSample(
-                "Направление танцев",
-                listOf(
-                    "K-Pop",
-                    "Hills",
-                    "Classic",
-                    "Hip-Hop",
-                    "BreakDance"
-                )
-            )
-            ExposedDropdownMenuSample(
-                "Ближайшее метро",
-                listOf(
-                    "Беговая",
-                    "Зенит",
-                    "Приморская",
-                    "Василеостровская",
-                    "Гостинный Двор",
-                    "Маяковский",
-                    "Площадь Александра Невского 1",
-                    "Елизаровская",
-                    "Ломоносовская",
-                    "Пролетарская",
-                    "Обухово",
-                    "Рыбацкое"
-                )
-            )
-//            BlocksRow {
-//                MiniBlock(text = "Hip-Hop")
-//                MiniBlock(text = "300-1000 р.")
-//                MiniBlock(text = "м.Приморское")
-//                MiniBlock(text = "> 4.5")
-//            }
-//            Divider(modifier = Modifier.padding(bottom = 5.dp), color = FirstTextColor, thickness = 1.dp)
-//            StudioBlock("Title 1", 4.5)
-//            StudioBlock("Title 2", 4.6)
-//            StudioBlock("Title 3", 4.9)
-        }
-    }
-}
-
-@Composable
-fun SearchBar() {
-    var text by remember { mutableStateOf("") }
-
-    TextField(
-        value = "",
-        onValueChange = { text = it },
-        placeholder = { Text("Search", color = FirstTextColor) },
-        leadingIcon = {
-            Icon(
-                Icons.Filled.Search,
-                contentDescription = null,
-                tint = FirstTextColor
-            )
-        },
-        modifier = Modifier
-            .padding(vertical = 8.dp)
-            .fillMaxWidth(0.95f)
-            .background(SecondBackground, RoundedCornerShape(10.dp)),
-        shape = RoundedCornerShape(10.dp),
-        colors = TextFieldDefaults.textFieldColors(
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent
-        )
-    )
-}
-
-@Composable
-fun StudioBlock(text: String, rate: Double) {
-    Section {
-        Row(horizontalArrangement = Arrangement.SpaceBetween) {
-            Box(
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .weight(4f)
+                    .fillMaxWidth(0.95f)
+                    .background(FirstBackground)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            Text(
-                                rate.toString(),
-                                style = TextStyle(
-                                    color = FirstTextColor.copy(0.75f),
-                                    fontSize = 16.sp,
-                                )
-                            )
-                            Icon(
-                                Icons.Filled.Star,
-                                contentDescription = null,
-                                tint = FirstTextColor.copy(0.75f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Text(text, color = FirstTextColor, fontSize = 24.sp)
-                    }
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .height(75.dp)
-                    .weight(1f)
-            ) {
-                Image(
-                    bitmap = ImageBitmap.imageResource(R.drawable.icon_test),
-                    contentDescription = "icon_review",
-                    contentScale = ContentScale.FillHeight,
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(10.dp)
-                        .clip(CircleShape)
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun AveragePrice() {
-    var sliderPosition by remember { mutableStateOf(0f..100f) }
-
-    Column(
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start,
-        modifier = Modifier
-            .fillMaxWidth(0.95f)
-            .background(SecondBackground, shape = RoundedCornerShape(10.dp))
-            .padding(vertical = 8.dp, horizontal = 12.dp)
-    ) {
-        Text("Средняя цена абонемента: ", color = FirstTextColor, fontSize = 16.sp)
-        RangeSlider(
-            values = sliderPosition,
-            onValueChange = { range -> sliderPosition = range },
-            valueRange = 0f..100f,
-            colors = SliderDefaults.colors(
-                thumbColor = BorderColor,
-                activeTrackColor = FirstTextColor,
-                inactiveTickColor = BorderColor
-            ),
-            modifier = Modifier.fillMaxWidth(0.95f)
-        )
-        Text(
-            "От ${round(sliderPosition.start)} До ${round(sliderPosition.endInclusive)}",
-            color = FirstTextColor,
-            fontSize = 12.sp
-        )
-    }
-}
-
-@Composable
-fun UpperRate() {
-    var sliderPosition by remember { mutableStateOf(0f) }
-
-    Column(
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.Start,
-        modifier = Modifier
-            .fillMaxWidth(0.95f)
-            .background(SecondBackground, shape = RoundedCornerShape(10.dp))
-            .padding(vertical = 8.dp, horizontal = 12.dp)
-    ) {
-        Text("Оценка выше чем: ", color = FirstTextColor, fontSize = 16.sp)
-        Slider(
-            value = sliderPosition,
-            onValueChange = { range -> sliderPosition = range },
-            valueRange = 0f..100f,
-            colors = SliderDefaults.colors(
-                thumbColor = BorderColor,
-                activeTrackColor = FirstTextColor,
-                inactiveTickColor = BorderColor
-            ),
-            modifier = Modifier.fillMaxWidth(0.95f)
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun ExposedDropdownMenuSample(title: String, options: List<String>) {
-    var expanded by remember { mutableStateOf(false) }
-    var selectedOptionText by remember { mutableStateOf(options[0]) }
-
-    Column(
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxWidth()
-    ) {
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .background(SecondBackground, shape = RoundedCornerShape(10.dp))
-        ) {
-            TextField(
-                value = selectedOptionText,
-                onValueChange = {},
-                textStyle = TextStyle(color = FirstTextColor),
-                readOnly = true,
-                colors = TextFieldDefaults.textFieldColors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent
-                ),
-                label = { Text(title, color = FirstTextColor, fontSize = 16.sp) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(SecondBackground, shape = RoundedCornerShape(10.dp))
-            )
-            val filteringOptions =
-                options.filter { it.contains(selectedOptionText, ignoreCase = true) }
-            if (filteringOptions.isNotEmpty()) {
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(SecondBackground)
-                ) {
-                    options.forEach { selectionOption ->
-                        DropdownMenuItem(
-                            onClick = {
-                                selectedOptionText = selectionOption
-                                expanded = false
+                SearchBar(searchText,
+                    onSearchSubmit = {
+                        scope.launch {
+                            val m = metros.value.find { it.name == selectedMetro.value }?.id
+                            var mList = emptyList<String>()
+                            if (m != null){
+                                mList = listOf("\"$m\"")
                             }
-                        ) {
-                            Text(text = selectionOption, color = FirstTextColor)
+
+                            val s = directions.value.find { it.name == selectedDirection.value }?.id
+                            var sList = emptyList<String>()
+                            if (s != null){
+                                sList = listOf("\"$s\"")
+                            }
+
+                            val result = client.getStudios(StudioRequest(
+                                minimalRate = averageRate.value.toDouble(),
+                                metroList = mList,
+                                stylesList = sList,
+                                searchCriteria = searchText.value,
+                            ))
+                            studios.value = result.content
+                            searchFlag.value = false
                         }
+                    },
+                    onFocus = {
+                        searchFlag.value = true
                     }
+                )
+                DownArrowButton{
+                    searchFlag.value = !searchFlag.value
+                }
+            }
+            if (
+                selectedDirection.value != "" ||
+                selectedMetro.value != "" ||
+                averagePrice.value != 0f..100f ||
+                averageRate.value > 0
+            ){
+                BlocksRow {
+                    if (selectedDirection.value != "") {
+                        MiniBlock(text = selectedDirection.value)
+                    }
+                    if (averagePrice.value != 0f..100f) {
+                        MiniBlock(
+                            text = "${averagePrice.value.start.toInt()}-" +
+                                    "${averagePrice.value.endInclusive.toInt()} р."
+                        )
+                    }
+                    if (selectedMetro.value != "") {
+                        MiniBlock(text = "м. ${selectedMetro.value}")
+                    }
+                    if (averageRate.value > 0) {
+                        MiniBlock(text = "> ${averageRate.value.roundToInt()}")
+                    }
+                }
+            }
+            Divider(
+                modifier = Modifier.padding(bottom = 5.dp),
+                color = FirstTextColor,
+                thickness = 1.dp
+            )
+            AnimatedVisibility(searchFlag.value) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(FirstBackground)
+                ) {
+                    AveragePrice(averagePrice)
+                    UpperRate(averageRate)
+                    ExposedDropdownMenuSample(
+                        "Направление танцев",
+                        directions.value.map { direct -> direct.name },
+                        selectedDirection
+                    )
+                    ExposedDropdownMenuSample(
+                        "Ближайшее метро",
+                        metros.value.map { metro -> metro.name },
+                        selectedMetro
+                    )
+                }
+            }
+            AnimatedVisibility(!searchFlag.value) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(FirstBackground)
+                ) {
+                    studios.value.map { StudioBlock(text = it.name, rate = it.rate.toFloat()){
+                        navController.navigate("studio/${it.id}")
+                    } }
                 }
             }
         }
     }
 }
+

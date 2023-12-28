@@ -9,7 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -18,26 +18,67 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import kotlinx.coroutines.launch
 import ru.dancat.metasearcher.ui.theme.FirstBackground
 import ru.dancat.metasearcher.ui.theme.SecondBackground
 import ru.dancat.metasearcher.ui.theme.FirstTextColor
 import ru.dancat.metasearcher.ui.theme.ThirdBackground
 import ru.dancat.metasearcher.R
-import ru.dancat.metasearcher.ui.components.Section
-import ru.dancat.metasearcher.ui.components.SectionBlocks
+import ru.dancat.metasearcher.backend.clients.client
+import ru.dancat.metasearcher.backend.models.Comment
+import ru.dancat.metasearcher.backend.models.Metro
+import ru.dancat.metasearcher.backend.models.StudioContent
+import ru.dancat.metasearcher.backend.models.Style
+import ru.dancat.metasearcher.ui.components.*
 
-@Preview(showBackground = true)
-@Composable
-fun StudioPreview() {
-    Studio()
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun StudioPreview() {
+//    Studio("123")
+//}
 
 @Composable
-fun Studio() {
+fun Studio(studioId: String) {
+    val scope = rememberCoroutineScope()
+    val content: MutableState<StudioContent?> = remember { mutableStateOf(null) }
+    val styles: MutableState<List<Style>?> = remember { mutableStateOf(emptyList()) }
+    val metros: MutableState<List<Metro>?> = remember { mutableStateOf(emptyList()) }
+    val info: MutableState<List<String>> = remember { mutableStateOf(emptyList()) }
+    val comments: MutableState<List<Comment>> = remember { mutableStateOf(emptyList()) }
+
+    DisposableEffect(Unit) {
+        val job = scope.launch {
+            try {
+                content.value = client.getStudioById(studioId)
+                styles.value = content.value?.styles?.map {
+                    client.getStyleById(it)
+                }
+                metros.value = content.value?.metros?.map {
+                    client.getMetroById(it)
+                }
+                comments.value = client.getStudioComment(studioId)
+                val infoResult = mutableListOf(
+                    "Электронная почта: ${content.value?.email}",
+                    "WebSite: ${content.value?.website}",
+                    "ИНН ${content.value?.inn}"
+                )
+                infoResult += metros.value?.map { "М. ${it.name}" } ?: emptyList()
+                info.value = infoResult.toList()
+            } catch (e: Exception) {
+                println(e.message)
+                println(e.cause)
+                println(e.stackTrace)
+            }
+        }
+
+        onDispose {
+            job.cancel()
+        }
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -52,7 +93,7 @@ fun Studio() {
         ) {
             ImageTitle(
                 bitmap = ImageBitmap.imageResource(R.drawable.icon_test),
-                "Title"
+                text = content.value?.name ?: ""
             )
             Section {
                 Text(
@@ -73,21 +114,12 @@ fun Studio() {
                 TextBlock("Цена")
             }
             SectionBlocks(text = "Танцевальные направления") {
-                MiniBlock(text = "K-Pop")
-                MiniBlock(text = "Swing")
-                MiniBlock(text = "Breakdance")
-                MiniBlock(text = "Hills")
-                MiniBlock(text = "Hip-Hop")
-                MiniBlock(text = "Classic")
+                styles.value?.map { MiniBlock(text = it.name) }
             }
-            SectionBlocks(text = "Адрес: Лиговский Проспект 10А") {
-                MiniBlock(text = "Телефон: +78989896070")
-                MiniBlock(text = "Telegram")
-                MiniBlock(text = "Vk")
-                MiniBlock(text = "Instagram")
-                MiniBlock(text = "dancegmail.com")
+            SectionBlocks(text = "Адрес: ${content.value?.address}") {
+                info.value.map { MiniBlock(text = it) }
             }
-            Reviews()
+            content.value?.rate?.let { Reviews(it, comments = comments) }
         }
     }
 }
@@ -107,101 +139,5 @@ fun ImageTitle(bitmap: ImageBitmap, text: String) {
             style = TextStyle(fontSize = 50.sp, color = FirstTextColor),
             modifier = Modifier.zIndex(10f)
         )
-    }
-}
-
-@Composable
-fun TextBlock(text: String) {
-    Box(
-        modifier = Modifier.background(
-            SecondBackground, shape = RoundedCornerShape(10.dp)
-        )
-    ) {
-        Text(
-            text,
-            fontSize = 18.sp,
-            color = FirstTextColor,
-            modifier = Modifier.padding(7.dp)
-        )
-    }
-}
-
-
-@Composable
-fun MiniBlock(text: String) {
-    Box(
-        modifier = Modifier
-            .padding(bottom = 5.dp)
-            .background(FirstTextColor, shape = RoundedCornerShape(10.dp))
-    ) {
-        Text(
-            text, modifier = Modifier.padding(vertical = 5.dp, horizontal = 10.dp)
-        )
-    }
-}
-
-@Composable
-fun Reviews() {
-    Section {
-        Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Общая оценка 4.8", color = Color.White)
-                Text("Отзывы :", color = Color.White)
-            }
-            Column(
-                modifier = Modifier.padding(bottom = 10.dp, start = 10.dp, end = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Comment()
-                Comment()
-                Comment()
-            }
-        }
-    }
-}
-
-@Composable
-fun Comment() {
-    Box(modifier = Modifier
-        .height(75.dp)
-        .background(ThirdBackground, shape = RoundedCornerShape(10.dp))
-    ) {
-        Row {
-            Box(
-                modifier = Modifier.weight(2f),
-            ) {
-                Image(
-                    bitmap = ImageBitmap.imageResource(R.drawable.icon_test),
-                    contentDescription = "icon_review",
-                    contentScale = ContentScale.FillHeight,
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(10.dp)
-                        .clip(CircleShape)
-                        .align(Alignment.Center)
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .weight(5f)
-                    .fillMaxHeight(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Комментарий 1", fontSize = 16.sp)
-            }
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Text("4/5", textAlign = TextAlign.Center)
-            }
-        }
     }
 }

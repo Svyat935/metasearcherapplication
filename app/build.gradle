@@ -73,32 +73,5 @@ dependencies {
     implementation "io.ktor:ktor-serialization-kotlinx-json:2.3.6"
     implementation "io.ktor:ktor-client-content-negotiation:2.3.6"
 
-    // Common
-//    implementation "io.ktor:ktor-client-core:2.3.6"
-//    implementation "io.ktor:ktor-client-json:2.3.6"
-//    implementation "io.ktor:ktor-client-serialization:2.3.6"
-//
-//    // Android
-//    implementation "io.ktor:ktor-client-android:2.3.6"
-//    implementation "io.ktor:ktor-client-json-jvm:2.3.6"
-//    implementation "io.ktor:ktor-client-serialization-jvm:2.3.6"
-//
-//    // Coroutine
-//    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:2.3.6"
-//    implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:0.14.0"
-//
-//    // Coroutine Android
-//    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:2.3.6"
-//    implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.14.0"
-
-//    implementation "io.ktor:ktor-client-core:2.3.6"
-//    implementation "io.ktor:ktor-client-okhttp:2.3.6"
-//    implementation "io.ktor:io.ktor:ktor-client-darwin:2.3.6"
-//    implementation "io.ktor:ktor-client-okhttp:2.3.6"
-
-//    implementation "io.ktor:ktor-client-json-jvm:2.3.6"
-//    implementation ""
-//    implementation "io.ktor:ktor-serialization-kotlinx-json:2.3.6"
-//    implementation "io.ktor:ktor-server-content-negotiation:2.3.6"
-//    implementation "io.ktor:ktor-client-gson:2.3.6"
+    implementation "androidx.navigation:navigation-compose:2.4.0"
 }

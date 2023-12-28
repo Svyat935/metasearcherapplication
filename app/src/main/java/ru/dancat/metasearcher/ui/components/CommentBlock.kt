@@ -12,15 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ru.dancat.metasearcher.R
 import ru.dancat.metasearcher.ui.theme.ThirdBackground
 
 @Composable
-fun Comment(bitmap: ImageBitmap, text: String, rate: Double) {
+fun CommentBlock(bitmap: ImageBitmap, text: String, rate: Double) {
     Box(modifier = Modifier
         .height(75.dp)
         .background(ThirdBackground, shape = RoundedCornerShape(10.dp))
