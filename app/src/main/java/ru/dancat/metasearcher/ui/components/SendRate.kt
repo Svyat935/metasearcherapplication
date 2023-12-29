@@ -13,34 +13,38 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ru.dancat.metasearcher.ui.theme.BorderColor
+import ru.dancat.metasearcher.ui.theme.FirstBackground
 import ru.dancat.metasearcher.ui.theme.FirstTextColor
 import ru.dancat.metasearcher.ui.theme.SecondBackground
 
 @Composable
-fun UpperRate(sliderPosition: MutableState<Float>) {
-
+fun SendRate(sliderPosition: MutableState<Float>) {
     Column(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start,
         modifier = Modifier
-            .fillMaxWidth(0.95f)
-            .background(SecondBackground, shape = RoundedCornerShape(10.dp))
+            .fillMaxWidth()
+            .background(Color.White, shape = RoundedCornerShape(10.dp))
             .padding(vertical = 8.dp, horizontal = 12.dp)
     ) {
-        Text("Оценка выше чем: ", color = FirstTextColor, fontSize = 16.sp)
+        Text(
+            "Оценка выше чем: ${String.format("%.2f", sliderPosition.value)}",
+            color = FirstBackground,
+            fontSize = 16.sp
+        )
         Slider(
             value = sliderPosition.value,
             onValueChange = { range -> sliderPosition.value = range },
             valueRange = 0f..5f,
             colors = SliderDefaults.colors(
                 thumbColor = BorderColor,
-                activeTrackColor = FirstTextColor,
+                activeTrackColor = FirstBackground,
                 inactiveTickColor = BorderColor
             ),
-            steps = 4,
             modifier = Modifier.fillMaxWidth(0.95f)
         )
     }

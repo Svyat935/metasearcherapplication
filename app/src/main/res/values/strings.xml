@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">MetasearcherApplication</string>
+    <string name="direction_styles">Направление танцев</string>
+    <string name="around_metro">Ближайшее метро</string>
+    <string name="rate">Рейтинг</string>
+    <string name="schedule">Расписание</string>
+    <string name="price">Цена</string>
+    <string name="dance_styles">Танцевальные направления</string>
+    <string name="address">Адрес: </string>
 </resources>
