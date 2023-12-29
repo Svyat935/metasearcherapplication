@@ -9,11 +9,13 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
+import ru.dancat.metasearcher.R
 import ru.dancat.metasearcher.backend.clients.client
 import ru.dancat.metasearcher.backend.models.Metro
 import ru.dancat.metasearcher.backend.models.StudioLite
@@ -45,22 +47,16 @@ fun Searching(navController: NavController) {
 
     val scope = rememberCoroutineScope()
 
-    DisposableEffect(Unit) {
-        val job = scope.launch {
-            try {
-                metros.value = client.getMetros()
-                directions.value = client.getStyles()
-                val result = client.getStudios(StudioRequest())
-                studios.value = result.content
-            } catch (e: Exception) {
-                println(e.message)
-                println(e.cause)
-                println(e.stackTrace)
-            }
-        }
-
-        onDispose {
-            job.cancel()
+    LaunchedEffect(Unit) {
+        try {
+            metros.value = client.getMetros()
+            directions.value = client.getStyles()
+            val result = client.getStudios(StudioRequest())
+            studios.value = result.content
+        } catch (e: Exception) {
+            println(e.message)
+            println(e.cause)
+            println(e.stackTrace)
         }
     }
 
@@ -83,53 +79,46 @@ fun Searching(navController: NavController) {
                     .fillMaxWidth(0.95f)
                     .background(FirstBackground)
             ) {
-                SearchBar(searchText,
-                    onSearchSubmit = {
-                        scope.launch {
-                            val m = metros.value.find { it.name == selectedMetro.value }?.id
-                            var mList = emptyList<String>()
-                            if (m != null){
-                                mList = listOf("\"$m\"")
-                            }
+                SearchBar(searchText, onSearchSubmit = {
+                    scope.launch {
+                        val m = metros.value.find { it.name == selectedMetro.value }?.id
+                        var mList = emptyList<String>()
+                        if (m != null) {
+                            mList = listOf("\"$m\"")
+                        }
 
-                            val s = directions.value.find { it.name == selectedDirection.value }?.id
-                            var sList = emptyList<String>()
-                            if (s != null){
-                                sList = listOf("\"$s\"")
-                            }
+                        val s = directions.value.find { it.name == selectedDirection.value }?.id
+                        var sList = emptyList<String>()
+                        if (s != null) {
+                            sList = listOf("\"$s\"")
+                        }
 
-                            val result = client.getStudios(StudioRequest(
+                        val result = client.getStudios(
+                            StudioRequest(
                                 minimalRate = averageRate.value.toDouble(),
                                 metroList = mList,
                                 stylesList = sList,
                                 searchCriteria = searchText.value,
-                            ))
-                            studios.value = result.content
-                            searchFlag.value = false
-                        }
-                    },
-                    onFocus = {
-                        searchFlag.value = true
+                            )
+                        )
+                        studios.value = result.content
+                        searchFlag.value = false
                     }
-                )
-                DownArrowButton{
+                }, onFocus = {
+                    searchFlag.value = true
+                })
+                DownArrowButton {
                     searchFlag.value = !searchFlag.value
                 }
             }
-            if (
-                selectedDirection.value != "" ||
-                selectedMetro.value != "" ||
-                averagePrice.value != 0f..100f ||
-                averageRate.value > 0
-            ){
+            if (selectedDirection.value != "" || selectedMetro.value != "" || averagePrice.value != 0f..100f || averageRate.value > 0) {
                 BlocksRow {
                     if (selectedDirection.value != "") {
                         MiniBlock(text = selectedDirection.value)
                     }
                     if (averagePrice.value != 0f..100f) {
                         MiniBlock(
-                            text = "${averagePrice.value.start.toInt()}-" +
-                                    "${averagePrice.value.endInclusive.toInt()} р."
+                            text = "${averagePrice.value.start.toInt()}-" + "${averagePrice.value.endInclusive.toInt()} р."
                         )
                     }
                     if (selectedMetro.value != "") {
@@ -141,9 +130,7 @@ fun Searching(navController: NavController) {
                 }
             }
             Divider(
-                modifier = Modifier.padding(bottom = 5.dp),
-                color = FirstTextColor,
-                thickness = 1.dp
+                modifier = Modifier.padding(bottom = 5.dp), color = FirstTextColor, thickness = 1.dp
             )
             AnimatedVisibility(searchFlag.value) {
                 Column(
@@ -156,14 +143,12 @@ fun Searching(navController: NavController) {
                     AveragePrice(averagePrice)
                     UpperRate(averageRate)
                     ExposedDropdownMenuSample(
-                        "Направление танцев",
+                        stringResource(id = R.string.direction_styles),
                         directions.value.map { direct -> direct.name },
                         selectedDirection
                     )
                     ExposedDropdownMenuSample(
-                        "Ближайшее метро",
-                        metros.value.map { metro -> metro.name },
-                        selectedMetro
+                        stringResource(id = R.string.around_metro), metros.value.map { metro -> metro.name }, selectedMetro
                     )
                 }
             }
@@ -175,9 +160,11 @@ fun Searching(navController: NavController) {
                         .fillMaxWidth()
                         .background(FirstBackground)
                 ) {
-                    studios.value.map { StudioBlock(text = it.name, rate = it.rate.toFloat()){
-                        navController.navigate("studio/${it.id}")
-                    } }
+                    studios.value.map {
+                        StudioBlock(text = it.name, rate = it.rate.toFloat()) {
+                            navController.navigate("studio/${it.id}")
+                        }
+                    }
                 }
             }
         }
